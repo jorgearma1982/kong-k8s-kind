@@ -1,0 +1,20 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+spec:
+  selector:
+    matchLabels:
+      run: whoami
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: whoami
+    spec:
+      containers:
+      - name: whoami
+        image: containous/whoami:latest
+        ports:
+        - containerPort: 80
