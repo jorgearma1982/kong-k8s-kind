@@ -32,6 +32,12 @@ Ahora instalamos los paquetes para kubernetes con `kind`, también instalamos el
 $ brew install kind kubectl
 ```
 
+También instalemos la herramienta de pruebas de carga para aplicaciones web:
+
+```shell
+$ brew install k6
+```
+
 Validamos la instalación de kind:
 
 ```shell
@@ -346,6 +352,16 @@ X-Real-Ip: 10.244.1.1
 ```
 
 Listo!, ya tenemos una respuesta de `whoami`.
+
+## Pruebas de carga a la aplicación web
+
+Usaremos `k6` para realizar pruebas de carga en la aplicación que exponemos a través de kong:
+
+Ahora ejecutamos el script con las pruebas:
+
+```shell
+$ k6 run k6/script.js
+```
 
 ## Limpieza
 
