@@ -170,7 +170,7 @@ healthz check passed
 Listamos los nodos del cluster:
 
 ```shell
-$ k get nodes
+$ kubectl get nodes
 NAME                 STATUS   ROLES                  AGE     VERSION
 kind-control-plane   Ready    control-plane,master   5m42s   v1.23.4
 kind-worker          Ready    <none>                 5m11s   v1.23.4
@@ -181,7 +181,7 @@ Como se puede ver tenemos un nodo que es el maestro, es decir, la capa de contro
 Listemos los pods de los servicios que están en ejecución:
 
 ```shell
-$ k get pods -A
+$ kubectl get pods -A
 NAMESPACE            NAME                                         READY   STATUS             RESTARTS   AGE
 kube-system          coredns-64897985d-7pxk8                      1/1     Running            0          10m
 kube-system          coredns-64897985d-7qlk2                      1/1     Running            0          10m
@@ -211,67 +211,107 @@ Todo indica a que el cluster tiene todo listo para desplegar nuestras aplicacion
 
 ## Despliegue de Kong
 
-Instalamos Kong en modo dbless para hacer una instalación sencilla sin base de datos:
+Instalaremos Kong con base de datos postgres para almacenar todas las configuraciones.
+
+Usando helm, agregamos el repositorio de kong:
 
 ```shell
-$ kubectl apply -f https://raw.githubusercontent.com/Kong/kubernetes-ingress-controller/master/deploy/single/all-in-one-dbless.yaml
-namespace/kong created
-customresourcedefinition.apiextensions.k8s.io/kongclusterplugins.configuration.konghq.com created
-customresourcedefinition.apiextensions.k8s.io/kongconsumers.configuration.konghq.com created
-customresourcedefinition.apiextensions.k8s.io/kongingresses.configuration.konghq.com created
-customresourcedefinition.apiextensions.k8s.io/kongplugins.configuration.konghq.com created
-customresourcedefinition.apiextensions.k8s.io/tcpingresses.configuration.konghq.com created
-customresourcedefinition.apiextensions.k8s.io/udpingresses.configuration.konghq.com created
-serviceaccount/kong-serviceaccount created
-role.rbac.authorization.k8s.io/kong-leader-election created
-clusterrole.rbac.authorization.k8s.io/kong-ingress created
-clusterrole.rbac.authorization.k8s.io/kong-ingress-gateway created
-clusterrole.rbac.authorization.k8s.io/kong-ingress-knative created
-rolebinding.rbac.authorization.k8s.io/kong-leader-election created
-clusterrolebinding.rbac.authorization.k8s.io/kong-ingress created
-clusterrolebinding.rbac.authorization.k8s.io/kong-ingress-gateway created
-clusterrolebinding.rbac.authorization.k8s.io/kong-ingress-knative created
-secret/kong-serviceaccount-token created
-service/kong-proxy created
-service/kong-validation-webhook created
+$ helm repo add kong https://charts.konghq.com
+```
+
+Ahora actualizamos los repositorios:
+
+```shell
+$ helm repo update
+```
+
+Ejecutamos la instalación:
+
+```shell
+$ helm ls -n kong | grep kong || helm install api-gateway -n kong kong/kong \
+  --set ingressController.installCRDs=false \
+  --set admin.enabled=true \
+  --set admin.type=ClusterIP \
+  --set admin.http.enabled=true \
+  --set admin.tls.enabled=false \
+  --set env.database=postgres \
+  --set postgresql.enabled=true
+  NAME: api-gateway
+LAST DEPLOYED: Fri Aug  5 09:51:02 2022
+NAMESPACE: kong
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+To connect to Kong, please execute the following commands:
+
+HOST=$(kubectl get svc --namespace kong api-gateway-kong-proxy -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+PORT=$(kubectl get svc --namespace kong api-gateway-kong-proxy -o jsonpath='{.spec.ports[0].port}')
+export PROXY_IP=${HOST}:${PORT}
+curl $PROXY_IP
+
+Once installed, please follow along the getting started guide to start using
+Kong: https://docs.konghq.com/kubernetes-ingress-controller/latest/guides/getting-started/
+```   
+
 deployment.apps/ingress-kong created
 ingressclass.networking.k8s.io/kong created
 ```
 
-Como se puede ver, se crea un namespace llamado `kong` y varios `CRD` ó `Custom Resource Definition` que se usan
+Esta instalación de Kong crea varios recursos de tipo `CRD` ó `Custom Resource Definition` que se usan
 para configurar los recursos de kong de forma declarativa. Además se crean cuentas de servicio y los roles
 de acceso, así como un secreto, los servicios de red, el deployment y un ingress class.
 
 Listemos los recursos en el namespace de kong:
 
 ```shell
-$ k -n kong get all
-NAME                                READY   STATUS    RESTARTS   AGE
-pod/ingress-kong-7c4bd5dc74-zjmqr   2/2     Running   0          43s
+$ kubectl -n kong get all
+NAME                                         READY   STATUS      RESTARTS   AGE
+pod/api-gateway-kong-5f8d97b9c5-dp4rw        2/2     Running     0          7m
+pod/api-gateway-kong-init-migrations-gmc7s   0/1     Completed   0          7m
+pod/api-gateway-postgresql-0                 1/1     Running     0          7m
 
-NAME                              TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
-service/kong-proxy                LoadBalancer   10.96.180.195   <pending>     80:30721/TCP,443:30428/TCP   43s
-service/kong-validation-webhook   ClusterIP      10.96.157.114   <none>        443/TCP                      43s
+NAME                                TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+service/api-gateway-kong-admin      ClusterIP      10.96.100.125   <none>        8001/TCP                     7m
+service/api-gateway-kong-proxy      LoadBalancer   10.96.39.118    <pending>     80:30448/TCP,443:32649/TCP   7m
+service/api-gateway-postgresql      ClusterIP      10.96.10.142    <none>        5432/TCP                     7m
+service/api-gateway-postgresql-hl   ClusterIP      None            <none>        5432/TCP                     7m
 
-NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/ingress-kong   1/1     1            1           43s
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/api-gateway-kong   1/1     1            1           7m
 
-NAME                                      DESIRED   CURRENT   READY   AGE
-replicaset.apps/ingress-kong-7c4bd5dc74   1         1         1       43s
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/api-gateway-kong-5f8d97b9c5   1         1         1       7m
+
+NAME                                      READY   AGE
+statefulset.apps/api-gateway-postgresql   1/1     7m
+
+NAME                                         COMPLETIONS   DURATION   AGE
+job.batch/api-gateway-kong-init-migrations   1/1           40s        7m
 ```
+
+En el listado vemos que hay un deployment llamado `api-gateway-kong`, el cual los siguientes pods:
+
+* api-gateway-kong
+* api-gateway-kong-init-migrations
+* api-gateway-postgresql
+
+La base de datos se levanta y se configura con credenciales default en el pod `api-gateway-postgresql`. El pod
+`api-gateway-initmigrations` solo se ejecuta una vez para inicializar y configurar la base de datos postgres.
+Finalmente el pod `api-gateway-kong` es el servidor principal de kong.
 
 Como se puede ver el servicio `kong-proxy` es de tipo `LoadBalancer` y mapea el puerto `30721` al `80`, y el
 `30428` al `443` en TCP. Necesitamos cambiar esos puertos para que hagan coincidencia con los que definimos
-en el port maping al crear el cluster.
+en el port mapping al crear el cluster.
 
 ```shell
 $ kubectl -n kong patch service kong-proxy --patch-file kong/patch-service-nodeport.yml
 ```
 
 ```shell
-$ kubectl -n kong get service kong-proxy
-NAME         TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
-kong-proxy   NodePort   10.96.180.195   <none>        80:31682/TCP,443:32527/TCP   4m13s
+$ kubectl -n kong get service api-gateway-kong-proxy
+NAME                     TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+api-gateway-kong-proxy   NodePort   10.96.180.195   <none>        80:31682/TCP,443:32527/TCP   4m13s
 ```
 
 Como se puede ver ya se usan los puertos que definimos al inicio.
@@ -283,7 +323,7 @@ $ curl http://localhost/
 {"message":"no Route matched with those values"}
 ```
 
-Listo!!! ya tenemos kong instalado y listo para usarse.
+Listo!!! Ya tenemos Kong instalado y listo para usarse.
 
 ## Despliegue aplicación
 
@@ -305,12 +345,31 @@ Creamos el ingress de una aplicación:
 $ kubectl apply -f echo/3_ingress.yml
 ```
 
+Esperamos unos segundos a que levanten los servicios y listamos los recursos creados:
+
+```shell
+$ kubectl get all
+NAME                          READY   STATUS    RESTARTS   AGE
+pod/whoami-6977d564f9-jmzm4   1/1     Running   0          65s
+
+NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+service/kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP    17m
+service/whoami       ClusterIP   10.96.181.18   <none>        8080/TCP   62s
+
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/whoami   1/1     1            1           65s
+
+NAME                                DESIRED   CURRENT   READY   AGE
+replicaset.apps/whoami-6977d564f9   1         1         1       65s
+```
+
+
 ## Validación aplicación
 
 Ahora validamos listando todos los recursos del namespace `default`:
 
 ```shell
-$ k -n default get all
+$ kubectl -n default get all
 NAME                          READY   STATUS    RESTARTS   AGE
 pod/whoami-6977d564f9-dq5pr   1/1     Running   0          2m35s
 
@@ -416,5 +475,8 @@ $ colima start --dns 8.8.8.8
 
 La siguiente es una lista de referencias externas que pueden serle de utilidad:
 
+* [Kong Ingress Controller](https://docs.konghq.com/kubernetes-ingress-controller/latest/)
+* [Kong - Getting started guide](https://docs.konghq.com/kubernetes-ingress-controller/latest/guides/getting-started/)
+* [Kubernetes - Orquestación de contenedores para producción](https://kubernetes.io/es/)
 * [kind - home](https://kind.sigs.k8s.io/)
 * [kind - quick start](https://kind.sigs.k8s.io/docs/user/quick-start/)
