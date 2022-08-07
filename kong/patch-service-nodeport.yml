@@ -1,9 +1,0 @@
-spec:
-  type: NodePort
-  ports:
-  - name: proxy
-    nodePort: 31682
-    port: 80
-  - name: proxy-ssl
-    nodePort: 32527
-    port: 443
