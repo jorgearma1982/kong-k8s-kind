@@ -2,55 +2,81 @@
 
 ## Introducción
 
-En este documento mostramos como instalar un cluster kubernetes en la laptop usando la implementación
+En este guía mostramos como instalar un cluster de `Kubernetes` en la laptop usando la implementación
 de `kind`, la cual corre cada componente en un contenedor en lugar de usar máquinas virtuales, originalmente
-fue diseñado para probar kubernetes en sí, pero puede ser usado para desarrollo local ó CI.
+fue diseñado para probar kubernetes en sí, pero también puede ser usado para desarrollo local ó CI.
 
-Instalaremos Kong como Ingress Controller y una aplicación web simple para validar la funcionalidad de Kong.
+Este proyecto puede servir para comprender los conceptos, la arquitectura y adentrarnos más en lo que
+son los contenedores, los pods y su relación con los microservicios.
+
+Instalaremos `Kong` como Ingress Controller y una aplicación web simple para validar la funcionalidad de Kong
+como API Gateway.
 
 ## Requisitos
 
 Es necesario tener instalado y en ejecución docker para poder gestionar contenedores, este ejercicio lo
-realizaremos en un equipo con macos, por lo que instalaremos la implementación `colima` para correr docker
-en local, si tienes linux puedes instalar docker usando tu manejador de paquetes favorito.
+realizaremos en un equipo con MacOS, por lo que instalaremos la implementación `colima` para correr docker
+en local, si tienes Linux puedes instalar docker usando tu manejador de paquetes favorito.
 
-Instalamos colima y el cliente docker:
+Iniciamos instalando colima y el cliente docker:
 
 ```shell
 $ brew install colima docker
 ```
 
-Iniciamos colima:
+Ahora debemos iniciar colima:
 
 ```shell
 $ colima start
+INFO[0000] starting colima
+INFO[0000] runtime: docker
+INFO[0000] preparing network ...                         context=vm
+INFO[0000] creating and starting ...                     context=vm
+INFO[0023] provisioning ...                              context=docker
+INFO[0023] starting ...                                  context=docker
+INFO[0028] done
 ```
 
-Ahora instalamos los paquetes para kubernetes con `kind`, también instalamos el cliente `kubectl`:
+**NOTA:** Por default colima levanta una máquina virtual con `2` vCPUs y `1` GB de RAM, si se desea modificar
+esto para asignar más CPU o RAM, puedes agregar los parámetros `--cpu 4` y `--memory 4`.
+
+Ahora instalamos los paquetes para kubernetes con `kind`, también instalamos el cliente `kubectl` y
+`k6` la herramienta de pruebas de carga de aplicaciones web:
 
 ```shell
-$ brew install kind kubectl
+$ brew install kind kubectl k6
 ```
 
-También instalemos la herramienta de pruebas de carga para aplicaciones web:
-
-```shell
-$ brew install k6
-```
-
-Validamos la instalación de kind:
+Validamos la instalación de las herramientas, iniciamos con kind:
 
 ```shell
 $ kind --version
 kind version 0.14.0
 ```
 
+Ahora veamos la versión de `kubectl`:
+
+```shell
+$ kubectl version --client=true
+Client Version: version.Info{Major:"1", Minor:"24", GitVersion:"v1.24.3"}
+Kustomize Version: v4.5.4
+```
+
+Y finalmente la versión de `k6`:
+
+```shell
+$ k6 version
+k6 v0.39.0 ((devel)) 
+```
+
 ## Instalación de cluster
 
-Definimos la configuración del cluster con dos nodos, uno con rol de `control-plane` y otro de `worker`:
+Definimos la configuración del cluster con dos nodos, uno con rol de `control-plane` y otro de `worker`.
 
-```
-$ cat kind/cluster-multi-ingress.yaml
+La configuración está almacenada en el archivo `kind/cluster-multi-ingress.yml`
+
+```shell
+$ cat kind/cluster-multi-ingress.yml
 ---
 apiVersion: kind.x-k8s.io/v1alpha4
 kind: Cluster
@@ -62,16 +88,18 @@ nodes:
       hostPort: 80
       listenAddress: "127.0.0.1"
       protocol: TCP
-    - containerPort: 32527
-      hostPort: 443
+    - containerPort: 32581
+      hostPort: 8001
       listenAddress: "127.0.0.1"
       protocol: TCP
-
 ```
 
-En la configuración de arriba podemos ver para el role `worker` se define un re dirección de puertos extra, esto
-básicamente hace un port forward del puerto en el host hacia el puerto en un servicio dentro del cluster,
-se re direcciona el puerto TCP `31682` al `80` para conexiones HTTP y el TCP `32527` al `443` para el HTTPS.
+En la configuración de arriba podemos ver para el role `worker` se define el `extraPortMapping`, lo cual significa
+que kind realizará una re dirección de puertos adicional, esta configuración básicamente hace un port forward del
+puerto en el host hacia el puerto en un servicio dentro del cluster, los puertos que se redireccionan son:
+
+* TCP `31682` al `80` para acceder a los servicios que expone Kong en modo HTTP
+* TCP `32581` al `8001` para acceder a la API de administración de Kong en modo HTTP.
 
 Note también que los puertos que se re direccionan se asocian a la dirección local `127.0.0.1`.
 
@@ -102,7 +130,7 @@ $ kind get clusters
 kind
 ```
 
-Como se puede ver tenemos un cluster llamado `kind`.
+La salida del comando de arriba muestra un cluster llamado `kind`.
 
 Veamos que pasó a nivel contenedores docker:
 
@@ -113,7 +141,7 @@ f9cfa676cce8   kindest/node:v1.23.4   "/usr/local/bin/entr…"   2 minutes ago  
 210646ab5d60   kindest/node:v1.23.4   "/usr/local/bin/entr…"   2 minutes ago   Up 2 minutes                               kind-worker
 ```
 
-Como se puede ver hay dos contenedores en ejecución asociados a los nodos del cluster.
+Arriba se puede ver hay dos contenedores en ejecución asociados a los nodos del cluster.
 
 ## Validación del cluster
 
@@ -225,10 +253,25 @@ Ahora actualizamos los repositorios:
 $ helm repo update
 ```
 
-Ejecutamos la instalación:
+Creamos un namespace para kong:
 
 ```shell
-$ helm ls -n kong | grep kong || helm install api-gateway -n kong kong/kong \
+$ kubectl create namespace kong
+namespace/kong created
+```
+
+Listamos los namespaces:
+
+```shell
+$ kubectl get namespace kong
+NAME   STATUS   AGE
+kong   Active   1s
+```
+
+Ejecutamos la instalación con los parámetros personalizados para habilitar el servicio de admin y postgresql:
+
+```shell
+$ helm install api-gateway -n kong kong/kong \
   --set ingressController.installCRDs=false \
   --set admin.enabled=true \
   --set admin.type=ClusterIP \
@@ -252,10 +295,6 @@ curl $PROXY_IP
 
 Once installed, please follow along the getting started guide to start using
 Kong: https://docs.konghq.com/kubernetes-ingress-controller/latest/guides/getting-started/
-```   
-
-deployment.apps/ingress-kong created
-ingressclass.networking.k8s.io/kong created
 ```
 
 Esta instalación de Kong crea varios recursos de tipo `CRD` ó `Custom Resource Definition` que se usan
@@ -300,27 +339,47 @@ La base de datos se levanta y se configura con credenciales default en el pod `a
 `api-gateway-initmigrations` solo se ejecuta una vez para inicializar y configurar la base de datos postgres.
 Finalmente el pod `api-gateway-kong` es el servidor principal de kong.
 
-Como se puede ver el servicio `kong-proxy` es de tipo `LoadBalancer` y mapea el puerto `30721` al `80`, y el
-`30428` al `443` en TCP. Necesitamos cambiar esos puertos para que hagan coincidencia con los que definimos
+En el listado de servicios, el servicio `api-gateway-kong-admin` es de tipo `ClusterIP` en el puerto `8001`. También
+se puede ver el servicio `api-gateway-kong-proxy` de tipo `LoadBalancer` y mapea el puerto `30448` al `80`,
+y el `30428` al `443` en TCP. Necesitamos cambiar esos puertos para que hagan coincidencia con los que definimos
 en el port mapping al crear el cluster.
 
-```shell
-$ kubectl -n kong patch service kong-proxy --patch-file kong/patch-service-nodeport.yml
-```
+Actualizamos la configuración del servicio kong admin:
 
 ```shell
-$ kubectl -n kong get service api-gateway-kong-proxy
-NAME                     TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
-api-gateway-kong-proxy   NodePort   10.96.180.195   <none>        80:31682/TCP,443:32527/TCP   4m13s
+$ kubectl -n kong patch service api-gateway-kong-admin --patch-file kong/patch-service-admin-nodeport.yml
+service/api-gateway-kong-admin patched
+```
+
+También actualizamos el servicio kong proxy:
+
+```shell
+$ kubectl -n kong patch service api-gateway-kong-proxy --patch-file kong/patch-service-proxy-nodeport.yml
+service/api-gateway-kong-proxy patched
+```
+
+Ahora listamos para ver los cambios:
+
+```shell
+$ kubectl -n kong get services | grep api-gateway-kong
+api-gateway-kong-admin      NodePort    10.96.157.9     <none>        8001:32581/TCP               12m
+api-gateway-kong-proxy      NodePort    10.96.209.152   <none>        80:31682/TCP,443:32527/TCP   12m
 ```
 
 Como se puede ver ya se usan los puertos que definimos al inicio.
 
-Hagamos una petición a kong:
+Hagamos una petición a kong al puerto TCP/80 donde se exponen los servicios:
 
 ```shell
 $ curl http://localhost/
 {"message":"no Route matched with those values"}
+```
+
+También podemos hacer una petición a la API de administración de Kong:
+
+```shell
+$ curl http://localhost:8001/
+{"configuration":{"go_pluginserver_exe":"/usr/local/bin/go-pluginserver","mem_cache_size":"128m","db_cache_warmup_entities":["services"],"headers":["server_tokens","latency_tokens"],"worker_consistency":"strict","nginx_events_directives":[{"name":"multi_accept","value":"on"},{"name":"worker_connections","value":"auto"}],"nginx_http_directives":[{"name":"client_body_buffer_size","value":"8k"},{"name":"client_max_body_size","value":"0"}..."tagline":"Welcome to kong","timers":{"running":0,"pending":10},"pids":{"workers":[1114,1115],"master":1}}
 ```
 
 Listo!!! Ya tenemos Kong instalado y listo para usarse.
@@ -330,39 +389,22 @@ Listo!!! Ya tenemos Kong instalado y listo para usarse.
 Realizamos el despliegue de una aplicación:
 
 ```shell
-$ kubectl apply -f echo/1_deployment.yml
+$ kubectl apply -f whoami/1_deployment.yml
 ```
 
 Creamos el service de una aplicación:
 
 ```shell
-$ kubectl apply -f echo/2_service.yml
+$ kubectl apply -f whoami/2_service.yml
 ```
 
 Creamos el ingress de una aplicación:
 
 ```shell
-$ kubectl apply -f echo/3_ingress.yml
+$ kubectl apply -f whoami/3_ingress.yml
 ```
 
-Esperamos unos segundos a que levanten los servicios y listamos los recursos creados:
-
-```shell
-$ kubectl get all
-NAME                          READY   STATUS    RESTARTS   AGE
-pod/whoami-6977d564f9-jmzm4   1/1     Running   0          65s
-
-NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
-service/kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP    17m
-service/whoami       ClusterIP   10.96.181.18   <none>        8080/TCP   62s
-
-NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/whoami   1/1     1            1           65s
-
-NAME                                DESIRED   CURRENT   READY   AGE
-replicaset.apps/whoami-6977d564f9   1         1         1       65s
-```
-
+Esperamos unos segundos a que levanten los servicios y continuamos con la validaciones.
 
 ## Validación aplicación
 
@@ -471,12 +513,58 @@ También puedes iniciar colima con la opción `--dns`, por ejemplo:
 $ colima start --dns 8.8.8.8
 ```
 
+## Comandos útiles
+
+Listado versiones:
+* kubectl version
+
+Listado contextos:
+* kubectl config get-contexts
+
+Detalles de cluster:
+* kubectl cluster-info
+
+Gestión de nodos:
+* kubectl get nodes
+* kubectl describe node <NODENAME>
+
+Gestión de pods:
+* kubectl get pods
+* kubectl describe pod <PODNAME>
+* kubectl logs <PODNAME>
+* kubectl delete pod <PODNAME>
+
+Gestión de services:
+* kubectl get services
+* kubectl describe service <SVCNAME>
+* kubectl delete service <SVCNAME>
+
+Gestión de namespaces:
+* kubectl get namespaces
+* kubectl describe namespace <NSNAME>
+* kubectl delete namespace <NSNAME>
+
+Gestión de recursos:
+* kubectl apply -f <YAMLFILE>
+* kubectl delete -f <YAMLFILE>
+
+Gestión de deployments:
+* kubectl get deployment
+* kubectl describe deployment <PODNAME>
+* kubectl delete deployment <PODNAME>
+
+Gestión charts:
+* helm ls
+* helm install <CHARTNAME>
+* helm uninstall <CHARTNAME>
+
 ## Referencias
 
 La siguiente es una lista de referencias externas que pueden serle de utilidad:
 
-* [Kong Ingress Controller](https://docs.konghq.com/kubernetes-ingress-controller/latest/)
-* [Kong - Getting started guide](https://docs.konghq.com/kubernetes-ingress-controller/latest/guides/getting-started/)
+* [Colima - container runtimes on macOS (and Linux) with minimal setup](https://github.com/abiosoft/colima)
 * [Kubernetes - Orquestación de contenedores para producción](https://kubernetes.io/es/)
 * [kind - home](https://kind.sigs.k8s.io/)
 * [kind - quick start](https://kind.sigs.k8s.io/docs/user/quick-start/)
+* [Kong Ingress Controller](https://docs.konghq.com/kubernetes-ingress-controller/latest/)
+* [Kong - Getting started guide](https://docs.konghq.com/kubernetes-ingress-controller/latest/guides/getting-started/)
