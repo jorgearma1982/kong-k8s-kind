@@ -37,7 +37,7 @@ INFO[0023] starting ...                                  context=docker
 INFO[0028] done
 ```
 
-**NOTA:** Por default colima levanta una máquina virtual con `2` vCPUs y `1` GB de RAM, si se desea modificar
+**NOTA:** Por default colima levanta una máquina virtual con `2` vCPUs y `2` GB de RAM, si se desea modificar
 esto para asignar más CPU o RAM, puedes agregar los parámetros `--cpu 4` y `--memory 4`.
 
 Ahora instalamos los paquetes para kubernetes con `kind`, también instalamos el cliente `kubectl` y
