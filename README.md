@@ -516,47 +516,57 @@ $ colima start --dns 8.8.8.8
 ## Comandos útiles
 
 Listado versiones:
+
 * kubectl version
 
 Listado contextos:
+
 * kubectl config get-contexts
 
 Detalles de cluster:
+
 * kubectl cluster-info
 
 Gestión de nodos:
+
 * kubectl get nodes
-* kubectl describe node <NODENAME>
+* kubectl describe node NODENAME
 
 Gestión de pods:
+
 * kubectl get pods
-* kubectl describe pod <PODNAME>
-* kubectl logs <PODNAME>
-* kubectl delete pod <PODNAME>
+* kubectl describe pod PODNAME
+* kubectl logs PODNAME
+* kubectl delete pod PODNAME
 
 Gestión de services:
+
 * kubectl get services
-* kubectl describe service <SVCNAME>
-* kubectl delete service <SVCNAME>
+* kubectl describe service SVCNAME
+* kubectl delete service SVCNAME
 
 Gestión de namespaces:
-* kubectl get namespaces
-* kubectl describe namespace <NSNAME>
-* kubectl delete namespace <NSNAME>
 
-Gestión de recursos:
-* kubectl apply -f <YAMLFILE>
-* kubectl delete -f <YAMLFILE>
+* kubectl get namespaces
+* kubectl describe namespace NSNAME
+* kubectl delete namespace NSNAME
+
+Gestión de recursos en modo declarativo:
+
+* kubectl apply -f YAMLFILE
+* kubectl delete -f YAMLFILE
 
 Gestión de deployments:
+
 * kubectl get deployment
-* kubectl describe deployment <PODNAME>
-* kubectl delete deployment <PODNAME>
+* kubectl describe deployment PODNAME
+* kubectl delete deployment PODNAME
 
 Gestión charts:
+
 * helm ls
-* helm install <CHARTNAME>
-* helm uninstall <CHARTNAME>
+* helm install CHARTNAME
+* helm uninstall CHARTNAME
 
 ## Referencias
 
