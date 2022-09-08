@@ -44,7 +44,7 @@ Ahora instalamos los paquetes para kubernetes con `kind`, también instalamos el
 `k6` la herramienta de pruebas de carga de aplicaciones web:
 
 ```shell
-$ brew install kind kubectl k6
+$ brew install kind kubectl helm k6
 ```
 
 Validamos la instalación de las herramientas, iniciamos con kind:
@@ -60,6 +60,13 @@ Ahora veamos la versión de `kubectl`:
 $ kubectl version --client=true
 Client Version: version.Info{Major:"1", Minor:"24", GitVersion:"v1.24.3"}
 Kustomize Version: v4.5.4
+```
+
+Validamos que tengamos helm instalado:
+
+```shell
+$ helm version
+version.BuildInfo{Version:"v3.9.2", GitCommit:"1addefbfe665c350f4daf868a9adc5600cc064fd", GitTreeState:"clean", GoVersion:"go1.18.4"
 ```
 
 Y finalmente la versión de `k6`:
