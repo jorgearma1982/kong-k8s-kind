@@ -1,0 +1,41 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api-gateway
+  namespace: argocd
+spec:
+  destination:
+    namespace: kong
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: kong
+    repoURL: https://charts.konghq.com
+    targetRevision: 2.11.0
+    helm:
+      parameters:
+        - name: proxy.enabled
+          value: "true"
+        - name: proxy.type
+          value: "NodePort"
+        - name: proxy.http.nodePort
+          value: "31682"
+        - name: admin.enabled
+          value: "true"
+        - name: admin.type
+          value: "NodePort"
+        - name: admin.http.enabled
+          value: "true"
+        - name: admin.http.nodePort
+          value: "32581"
+        - name: admin.tls.enabled
+          value: "false"
+        - name: postgresql.enabled
+          value: "true"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - Createnamespace=true
