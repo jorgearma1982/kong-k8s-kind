@@ -1,9 +1,9 @@
 spec:
   type: NodePort
   ports:
-  - name: proxy
+  - name: kong-proxy
     nodePort: 31682
     port: 80
-  - name: proxy-ssl
+  - name: kong-proxy-ssl
     nodePort: 32527
     port: 443

@@ -1,6 +1,7 @@
 spec:
   type: NodePort
   ports:
-  - name: kong-admin
+  - appProtocol: http
+    name: kong-admin
     nodePort: 32581
     port: 8001
