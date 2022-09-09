@@ -2,21 +2,25 @@
 
 ## Introducción
 
-En este guía mostramos como instalar un cluster de `Kubernetes` en la laptop usando la implementación
-de `kind`, la cual corre cada componente en un contenedor en lugar de usar máquinas virtuales, originalmente
-fue diseñado para probar kubernetes en sí, pero también puede ser usado para desarrollo local ó CI.
+En este guía mostramos como instalar un cluster de `Kubernetes` en la laptop ó máquina de escritorio y usarlo para
+desarrollo y pruebas en local, usaremos la implementación de `kind`, la cual corre cada nodo del cluster en un
+contenedor en lugar de usar máquinas virtuales, originalmente fue diseñado para probar kubernetes en sí,
+pero también puede ser usado para desarrollo local ó CI.
 
-Este proyecto puede servir para comprender los conceptos, la arquitectura y adentrarnos más en lo que
-son los contenedores, los pods y su relación con los microservicios.
+La documentación y el código en este repositorio puede servir para comprender los conceptos, la arquitectura y
+adentrarnos más en lo que son los contenedores, los pods y su relación con los micro servicios y aplicaciones
+nativas de nube.
 
-Instalaremos `Kong` como Ingress Controller y una aplicación web simple para validar la funcionalidad de Kong
-como API Gateway.
+Sobre el cluster instalaremos `Kong` como `Ingress Controller` y una aplicación web simple para validar la
+funcionalidad de Kong como `API Gateway`.
 
 ## Requisitos
 
-Es necesario tener instalado y en ejecución docker para poder gestionar contenedores, este ejercicio lo
+Es necesario tener instalado y en ejecución el motor gestión de contenedores docker, este ejercicio lo
 realizaremos en un equipo con MacOS, por lo que instalaremos la implementación `colima` para correr docker
 en local, si tienes Linux puedes instalar docker usando tu manejador de paquetes favorito.
+
+**NOTA:** Si ya usas la implementación de Docker Desktop puedes saltar los pasos de colima.
 
 Iniciamos instalando colima y el cliente docker:
 
@@ -66,7 +70,7 @@ Validamos que tengamos helm instalado:
 
 ```shell
 $ helm version
-version.BuildInfo{Version:"v3.9.2", GitCommit:"1addefbfe665c350f4daf868a9adc5600cc064fd", GitTreeState:"clean", GoVersion:"go1.18.4"
+version.BuildInfo{Version:"v3.9.2", GitCommit:"1adde...", GitTreeState:"clean", GoVersion:"go1.18.4"
 ```
 
 Y finalmente la versión de `k6`:
@@ -75,6 +79,20 @@ Y finalmente la versión de `k6`:
 $ k6 version
 k6 v0.39.0 ((devel)) 
 ```
+
+Clona este repositorio:
+
+```shell
+$ git clone https://github.com/jorgearma1982/kong-k8s-kind.git
+```
+
+Cambia tu directorio de trabajo a `kong-k8s-kind`:
+
+```shell
+$ cd kong-k8s-kind
+```
+
+Listo, ya tienes todo para empezar a crear el cluster.
 
 ## Instalación de cluster
 
@@ -584,4 +602,5 @@ La siguiente es una lista de referencias externas que pueden serle de utilidad:
 * [kind - home](https://kind.sigs.k8s.io/)
 * [kind - quick start](https://kind.sigs.k8s.io/docs/user/quick-start/)
 * [Kong Ingress Controller](https://docs.konghq.com/kubernetes-ingress-controller/latest/)
+* [Kindest - node images repository](https://hub.docker.com/r/kindest/node/tags)
 * [Kong - Getting started guide](https://docs.konghq.com/kubernetes-ingress-controller/latest/guides/getting-started/)
