@@ -16,11 +16,12 @@ funcionalidad de Kong como `API Gateway`.
 
 ## Requisitos
 
-Es necesario tener instalado y en ejecución el motor gestión de contenedores docker, este ejercicio lo
-realizaremos en un equipo con MacOS, por lo que instalaremos la implementación `colima` para correr docker
-en local, si tienes Linux puedes instalar docker usando tu manejador de paquetes favorito.
+Es necesario tener instalado y en ejecución un motor de gestión de contenedores cómo docker, en nuestro caso y para
+uso en local, será colima. Este ejercicio lo realizaremos en un equipo MacOS, pero si tienes Linux, puedes instalar
+docker usando tu manejador de paquetes favorito.
 
-**NOTA:** Si ya usas la implementación de Docker Desktop puedes saltar los pasos de colima.
+**NOTA:** Si ya usas la implementación de Docker Desktop puedes saltar los pasos de colima, en caso de usar
+un equipo de trabajo considera que este software requiere licencia de uso.
 
 Iniciamos instalando colima y el cliente docker:
 
