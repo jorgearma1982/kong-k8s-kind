@@ -132,8 +132,8 @@ Note también que los puertos que se re direccionan se asocian a la dirección l
 Ahora creamos el cluster versión `1.23.4` con la configuración en el archivo `kind/cluster-multi-ingress.yml`:
 
 ```shell
-$ kind create cluster --image kindest/node:v1.23.4 --config=kind/cluster-multi-ingress.yml
-Creating cluster "kind" ...
+$ kind create cluster --name kongcluster --image kindest/node:v1.23.4 --config=kind/cluster-multi-ingress.yml
+Creating cluster "kongcluster" ...
  ✓ Ensuring node image (kindest/node:v1.23.4) 🖼
  ✓ Preparing nodes 📦 📦
  ✓ Writing configuration 📜
@@ -141,10 +141,10 @@ Creating cluster "kind" ...
  ✓ Installing CNI 🔌
  ✓ Installing StorageClass 💾
  ✓ Joining worker nodes 🚜
-Set kubectl context to "kind-kind"
+Set kubectl context to "kind-kongcluster"
 You can now use your cluster with:
 
-kubectl cluster-info --context kind-kind
+kubectl cluster-info --context kind-kongcluster
 
 Thanks for using kind! 😊
 ```
@@ -153,18 +153,18 @@ Listo!! Ya tenemos un cluster con un nodo de control plane y un worker, hagamos 
 
 ```shell
 $ kind get clusters
-kind
+kongcluster
 ```
 
-La salida del comando de arriba muestra un cluster llamado `kind`.
+La salida del comando de arriba muestra un cluster llamado `kongcluster`.
 
 Veamos que pasó a nivel contenedores docker:
 
 ```shell
 $ docker ps
-CONTAINER ID   IMAGE                  COMMAND                  CREATED         STATUS         PORTS                       NAMES
-f9cfa676cce8   kindest/node:v1.23.4   "/usr/local/bin/entr…"   2 minutes ago   Up 2 minutes   127.0.0.1:55278->6443/tcp   kind-control-plane
-210646ab5d60   kindest/node:v1.23.4   "/usr/local/bin/entr…"   2 minutes ago   Up 2 minutes                               kind-worker
+CONTAINER ID   IMAGE                  COMMAND                  CREATED          STATUS          PORTS                                                NAMES
+0313a5f98036   kindest/node:v1.23.4   "/usr/local/bin/entr…"   45 minutes ago   Up 45 minutes   127.0.0.1:61556->6443/tcp                            kongcluster-control-plane
+4303a7cb9ed3   kindest/node:v1.23.4   "/usr/local/bin/entr…"   45 minutes ago   Up 45 minutes   127.0.0.1:80->31682/tcp, 127.0.0.1:8001->32581/tcp   kongcluster-worker
 ```
 
 Arriba se puede ver hay dos contenedores en ejecución asociados a los nodos del cluster.
@@ -176,8 +176,8 @@ Además de que el proceso de instalación fue super rápido, kind ya agregó un 
 
 ```shell
 $ kubectl config get-contexts
-CURRENT   NAME                       CLUSTER           AUTHINFO       NAMESPACE
-*         kind-kind                  kind-kind         kind-kind
+CURRENT   NAME                       CLUSTER            AUTHINFO       NAMESPACE
+*         kind-kongcluster           kind-kongcluster   kind-kongcluster
 ```
 
 Ahora mostramos la información de dicho cluster:
@@ -226,8 +226,8 @@ Listamos los nodos del cluster:
 ```shell
 $ kubectl get nodes
 NAME                 STATUS   ROLES                  AGE     VERSION
-kind-control-plane   Ready    control-plane,master   5m42s   v1.23.4
-kind-worker          Ready    <none>                 5m11s   v1.23.4
+kongcluster-control-plane   Ready    control-plane,master   46m   v1.23.4
+kongcluster-worker          Ready    <none>                 46m   v1.23.4
 ```
 
 Como se puede ver tenemos un nodo que es el maestro, es decir, la capa de control, y tenemos otro que es el worker.
@@ -237,17 +237,17 @@ Listemos los pods de los servicios que están en ejecución:
 ```shell
 $ kubectl get pods -A
 NAMESPACE            NAME                                         READY   STATUS             RESTARTS   AGE
-kube-system          coredns-64897985d-7pxk8                      1/1     Running            0          10m
-kube-system          coredns-64897985d-7qlk2                      1/1     Running            0          10m
-kube-system          etcd-kind-control-plane                      1/1     Running            0          10m
-kube-system          kindnet-5x48k                                1/1     Running            0          10m
-kube-system          kindnet-ctj24                                1/1     Running            0          10m
-kube-system          kube-apiserver-kind-control-plane            1/1     Running            0          10m
-kube-system          kube-controller-manager-kind-control-plane   1/1     Running            0          10m
-kube-system          kube-proxy-cf544                             1/1     Running            0          10m
-kube-system          kube-proxy-grnxt                             1/1     Running            0          10m
-kube-system          kube-scheduler-kind-control-plane            1/1     Running            0          10m
-local-path-storage   local-path-provisioner-5ddd94ff66-6x26q      1/1     Running            0          10m
+kube-system          coredns-64897985d-gkm8l                             1/1     Running   0          46m
+kube-system          coredns-64897985d-qbb9h                             1/1     Running   0          46m
+kube-system          etcd-kongcluster-control-plane                      1/1     Running   0          46m
+kube-system          kindnet-s2mpv                                       1/1     Running   0          46m
+kube-system          kindnet-tx4mb                                       1/1     Running   0          46m
+kube-system          kube-apiserver-kongcluster-control-plane            1/1     Running   0          46m
+kube-system          kube-controller-manager-kongcluster-control-plane   1/1     Running   0          46m
+kube-system          kube-proxy-dvg62                                    1/1     Running   0          46m
+kube-system          kube-proxy-z8d62                                    1/1     Running   0          46m
+kube-system          kube-scheduler-kongcluster-control-plane            1/1     Running   0          46m
+local-path-storage   local-path-provisioner-5ddd94ff66-pdj5h             1/1     Running   0          46m
 ```
 
 Esto se ve bien, todos los pods están `Running` :), en su mayoría son los servicios del cluster:
@@ -495,8 +495,8 @@ $ k6 run k6/script.js
 Para destruir el cluster ejecutamos:
 
 ```shell
-$ kind delete cluster
-Deleting cluster "kind" ...
+$ kind delete cluster kongcluster
+Deleting cluster "kongcluster" ...
 ```
 
 También podemos limpiar colima:
