@@ -605,3 +605,4 @@ La siguiente es una lista de referencias externas que pueden serle de utilidad:
 * [Kong Ingress Controller](https://docs.konghq.com/kubernetes-ingress-controller/latest/)
 * [Kindest - node images repository](https://hub.docker.com/r/kindest/node/tags)
 * [Kong - Getting started guide](https://docs.konghq.com/kubernetes-ingress-controller/latest/guides/getting-started/)
+* [Kong - Admin API](https://docs.konghq.com/gateway/latest/admin-api/)
