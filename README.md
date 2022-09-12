@@ -408,6 +408,8 @@ $ curl http://localhost:8001/
 {"configuration":{"go_pluginserver_exe":"/usr/local/bin/go-pluginserver","mem_cache_size":"128m","db_cache_warmup_entities":["services"],"headers":["server_tokens","latency_tokens"],"worker_consistency":"strict","nginx_events_directives":[{"name":"multi_accept","value":"on"},{"name":"worker_connections","value":"auto"}],"nginx_http_directives":[{"name":"client_body_buffer_size","value":"8k"},{"name":"client_max_body_size","value":"0"}..."tagline":"Welcome to kong","timers":{"running":0,"pending":10},"pids":{"workers":[1114,1115],"master":1}}
 ```
 
+**NOTA:** Para más información sobre como consumir la API de administración de kong, consulta las referencias al final.
+
 Listo!!! Ya tenemos Kong instalado y listo para usarse.
 
 ## Despliegue aplicación
@@ -605,4 +607,4 @@ La siguiente es una lista de referencias externas que pueden serle de utilidad:
 * [Kong Ingress Controller](https://docs.konghq.com/kubernetes-ingress-controller/latest/)
 * [Kindest - node images repository](https://hub.docker.com/r/kindest/node/tags)
 * [Kong - Getting started guide](https://docs.konghq.com/kubernetes-ingress-controller/latest/guides/getting-started/)
-* [Kong - Admin API](https://docs.konghq.com/gateway/latest/admin-api/)
+* [Kong - Admin API](https://docs.konghq.com/gateway/2.8.x/admin-api/)
