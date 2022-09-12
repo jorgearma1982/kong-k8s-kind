@@ -327,6 +327,16 @@ Esta instalación de Kong crea varios recursos de tipo `CRD` ó `Custom Resource
 para configurar los recursos de kong de forma declarativa. Además se crean cuentas de servicio y los roles
 de acceso, así como un secreto, los servicios de red, el deployment y un ingress class.
 
+Hagamos un listado de los release de helm en el namespace de kong:
+
+```shell
+$ helm -n kong ls
+NAME       	NAMESPACE	REVISION	UPDATED                             	STATUS  	CHART      	APP VERSION
+api-gateway	kong     	1       	2022-09-10 15:36:25.497193 -0500 CDT	deployed	kong-2.12.0	2.8
+```
+
+Excelente!, nos dice que tenemos la versión de la aplicación `2.8` y la versión del chart es `kong-2.12.0`.
+
 Listemos los recursos en el namespace de kong:
 
 ```shell
@@ -406,6 +416,19 @@ También podemos hacer una petición a la API de administración de Kong:
 ```shell
 $ curl http://localhost:8001/
 {"configuration":{"go_pluginserver_exe":"/usr/local/bin/go-pluginserver","mem_cache_size":"128m","db_cache_warmup_entities":["services"],"headers":["server_tokens","latency_tokens"],"worker_consistency":"strict","nginx_events_directives":[{"name":"multi_accept","value":"on"},{"name":"worker_connections","value":"auto"}],"nginx_http_directives":[{"name":"client_body_buffer_size","value":"8k"},{"name":"client_max_body_size","value":"0"}..."tagline":"Welcome to kong","timers":{"running":0,"pending":10},"pids":{"workers":[1114,1115],"master":1}}
+```
+
+Para ver la respuesta en un formato más legible, pasamos la salida al comando `jq`:
+
+```shell
+$ curl http://localhost:8001/ | jq "."
+```
+
+Veamos que versión de Kong tenemos instalada:
+
+```shell
+$ curl http://localhost:8001/ | jq ".version"
+"2.8.1"
 ```
 
 **NOTA:** Para más información sobre como consumir la API de administración de kong, consulta las referencias al final.
